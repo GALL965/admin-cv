@@ -5,5 +5,5 @@ export interface Education {
   institution: string;
   startDate: string;
   endDate: string;
-  accomplishments: string;
+  accomplishments: string[];
 }

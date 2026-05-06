@@ -11,20 +11,41 @@ import { map } from 'rxjs/operators';
 export class AdminEducationComponent {
   educations: Education[] = [];
   myEducation: Education = this.resetEducation();
+  accomplishmentsText = '';
 
   constructor(private educationService: EducationService) {
     this.loadEducation();
   }
 
   resetEducation(): Education {
+    this.accomplishmentsText = '';
     return {
       degree: '',
       fieldOfStudy: '',
       institution: '',
       startDate: '',
       endDate: '',
-      accomplishments: ''
+      accomplishments: []
     };
+  }
+
+  private normalizeAccomplishments(value: unknown): string[] {
+    if (Array.isArray(value)) {
+      return value
+        .map(v => (typeof v === 'string' ? v.trim() : ''))
+        .filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return value
+        .split(/\r?\n|,/g)
+        .map(v => v.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }
+
+  private formatAccomplishments(value: unknown): string {
+    return this.normalizeAccomplishments(value).join('\n');
   }
 
   loadEducation() {
@@ -33,7 +54,8 @@ export class AdminEducationComponent {
         map(changes =>
           changes.map(c => ({
             id: c.payload.doc.id,
-            ...(c.payload.doc.data() as Education)
+            ...(c.payload.doc.data() as any),
+            accomplishments: this.normalizeAccomplishments((c.payload.doc.data() as any)?.accomplishments)
           }))
         )
       )
@@ -41,14 +63,19 @@ export class AdminEducationComponent {
   }
 
   saveEducation() {
+    const eduToSave: Education = {
+      ...this.myEducation,
+      accomplishments: this.normalizeAccomplishments(this.accomplishmentsText)
+    };
+
     if (this.myEducation.id) {
-      this.educationService.updateEducation(this.myEducation.id, this.myEducation)
+      this.educationService.updateEducation(this.myEducation.id, eduToSave)
         .then(() => {
           alert('Educación actualizada');
           this.myEducation = this.resetEducation();
         });
     } else {
-      this.educationService.createEducation(this.myEducation)
+      this.educationService.createEducation(eduToSave)
         .then(() => {
           alert('Educación guardada');
           this.myEducation = this.resetEducation();
@@ -57,7 +84,8 @@ export class AdminEducationComponent {
   }
 
   editEducation(edu: Education) {
-    this.myEducation = { ...edu };
+    this.myEducation = { ...edu, accomplishments: this.normalizeAccomplishments(edu.accomplishments) };
+    this.accomplishmentsText = this.formatAccomplishments(this.myEducation.accomplishments);
   }
 
   deleteEducation(id?: string) {

@@ -32,8 +32,8 @@
       name="location"
     />
     <textarea
-      placeholder="Accomplishments"
-      [(ngModel)]="myJob.accomplishments"
+      placeholder="Accomplishments (one per line)"
+      [(ngModel)]="accomplishmentsText"
       name="accomplishments"
     ></textarea>
 
@@ -53,7 +53,12 @@
         <em>{{ item.location }}</em>
       </p>
       <p><strong>{{ item.company }}</strong></p>
-      <p><strong>Logros:</strong><br />{{ item.accomplishments }}</p>
+      <div>
+        <strong>Logros:</strong>
+        <ul *ngIf="item.accomplishments?.length">
+          <li *ngFor="let acc of item.accomplishments">{{ acc }}</li>
+        </ul>
+      </div>
     </div>
     <div class="button-row">
       <button class="btn btn-warning" (click)="editWorkExperience(item)">

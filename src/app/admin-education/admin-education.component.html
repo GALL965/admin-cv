@@ -38,8 +38,8 @@
     />
 
     <textarea
-      placeholder="Accomplishments"
-      [(ngModel)]="myEducation.accomplishments"
+      placeholder="Accomplishments (one per line)"
+      [(ngModel)]="accomplishmentsText"
       name="accomplishments"
       rows="3"
     ></textarea>
@@ -60,7 +60,12 @@
         &nbsp;|&nbsp;{{ item.institution }}
       </p>
       <p><strong>Field of study:</strong> {{ item.fieldOfStudy }}</p>
-      <p><strong>Accomplishments:</strong><br/>{{ item.accomplishments }}</p>
+      <div>
+        <strong>Accomplishments:</strong>
+        <ul *ngIf="item.accomplishments?.length">
+          <li *ngFor="let acc of item.accomplishments">{{ acc }}</li>
+        </ul>
+      </div>
     </div>
     <div class="button-row">
       <button class="btn btn-warning" (click)="editEducation(item)">

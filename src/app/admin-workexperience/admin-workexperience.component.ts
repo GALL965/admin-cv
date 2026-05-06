@@ -11,26 +11,54 @@ import { WorkExperienceService } from '../services/work-experience/work-experien
 export class AdminWorkexperienceComponent {
   jobs: WorkExperience[] = [];
   myJob: WorkExperience = this.resetJob();
+  accomplishmentsText = '';
 
   constructor(private workService: WorkExperienceService) {
     this.loadWorkExperience();
   }
 
   resetJob(): WorkExperience {
+    this.accomplishmentsText = '';
     return {
       company: '',
       position: '',
       location: '',
       startDate: '',
       endDate: '',
-      accomplishments: ''
+      accomplishments: []
     };
+  }
+
+  private normalizeAccomplishments(value: unknown): string[] {
+    if (Array.isArray(value)) {
+      return value
+        .map(v => (typeof v === 'string' ? v.trim() : ''))
+        .filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return value
+        .split(/\r?\n|,/g)
+        .map(v => v.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }
+
+  private formatAccomplishments(value: unknown): string {
+    return this.normalizeAccomplishments(value).join('\n');
   }
 
   loadWorkExperience() {
     this.workService.getWorkExperience().snapshotChanges().pipe(
       map((changes: any) =>
-        changes.map((c: any) => ({ id: c.payload.doc.id, ...c.payload.doc.data() as WorkExperience }))
+        changes.map((c: any) => {
+          const data = c.payload.doc.data() as any;
+          return {
+            id: c.payload.doc.id,
+            ...(data as WorkExperience),
+            accomplishments: this.normalizeAccomplishments(data?.accomplishments)
+          };
+        })
       )
     ).subscribe((data: WorkExperience[]) => {
       this.jobs = data;
@@ -38,14 +66,19 @@ export class AdminWorkexperienceComponent {
   }
 
   saveWorkExperience() {
+    const jobToSave: WorkExperience = {
+      ...this.myJob,
+      accomplishments: this.normalizeAccomplishments(this.accomplishmentsText)
+    };
+
     if (this.myJob.id) {
-      this.workService.workExperienceRef.doc(this.myJob.id).update(this.myJob)
+      this.workService.workExperienceRef.doc(this.myJob.id).update(jobToSave)
         .then(() => {
           alert('Experiencia actualizada');
           this.myJob = this.resetJob();
         });
     } else {
-      this.workService.createWorkExperience(this.myJob)
+      this.workService.createWorkExperience(jobToSave)
         .then(() => {
           alert('Experiencia guardada');
           this.myJob = this.resetJob();
@@ -54,7 +87,8 @@ export class AdminWorkexperienceComponent {
   }
 
   editWorkExperience(job: WorkExperience) {
-    this.myJob = { ...job };
+    this.myJob = { ...job, accomplishments: this.normalizeAccomplishments(job.accomplishments) };
+    this.accomplishmentsText = this.formatAccomplishments(this.myJob.accomplishments);
   }
 
   deleteWorkExperience(id?: string) {

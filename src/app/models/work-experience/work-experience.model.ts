@@ -5,5 +5,5 @@ export interface WorkExperience {
   location: string;
   startDate: string;
   endDate: string;
-  accomplishments: string;
+  accomplishments: string[];
 }
